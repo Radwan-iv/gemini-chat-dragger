@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Loader2, Fuel, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -51,9 +51,16 @@ const Index = () => {
 
       setMessages(prev => [...prev, { role: "assistant", content: text }]);
     } catch (error: any) {
+      let errorMessage = "Failed to get response from Gemini";
+      
+      // Check for rate limit error
+      if (error?.status === 429 || (error?.body && error.body.includes("RESOURCE_EXHAUSTED"))) {
+        errorMessage = "API rate limit exceeded. Please wait a moment before trying again.";
+      }
+      
       toast({
         title: "Error",
-        description: error.message || "Failed to get response from Gemini",
+        description: errorMessage,
         variant: "destructive",
       });
     } finally {
