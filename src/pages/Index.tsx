@@ -8,7 +8,6 @@ import ChatMessage from "@/components/ChatMessage";
 import ApiKeyInput from "@/components/ApiKeyInput";
 import { FileUploadZone } from "@/components/FileUploadZone";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { cn } from "@/lib/utils";
 
 interface Message {
   role: "user" | "assistant";
@@ -53,8 +52,12 @@ const Index = () => {
     } catch (error: any) {
       let errorMessage = "Failed to get response from Gemini";
       
+      // Check for token limit error
+      if (error?.status === 400 && error?.body?.includes("max tokens limit")) {
+        errorMessage = "Your message is too long. Please try sending a shorter message.";
+      }
       // Check for rate limit error
-      if (error?.status === 429 || (error?.body && error.body.includes("RESOURCE_EXHAUSTED"))) {
+      else if (error?.status === 429 || (error?.body && error.body.includes("RESOURCE_EXHAUSTED"))) {
         errorMessage = "API rate limit exceeded. Please wait a moment before trying again.";
       }
       
@@ -97,7 +100,7 @@ const Index = () => {
           <p className="text-muted-foreground">Unlock intelligent search with our generative UI.</p>
         </div>
 
-        {!apiKey && (
+        {!localStorage.getItem("GEMINI_API_KEY") && (
           <div className="mb-8">
             <ApiKeyInput />
           </div>
@@ -130,21 +133,19 @@ const Index = () => {
               placeholder="Ask a question..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className={cn(
-                "pr-24 py-6 text-base",
-              )}
-              disabled={isLoading || !apiKey}
+              className="pr-24 py-6 text-base"
+              disabled={isLoading || !localStorage.getItem("GEMINI_API_KEY")}
             />
             <div className="absolute right-2 flex items-center gap-2">
               <FileUploadZone 
                 onFileProcess={handleFileContent}
-                disabled={isLoading || !apiKey}
+                disabled={isLoading || !localStorage.getItem("GEMINI_API_KEY")}
               />
               <Button
                 type="submit"
                 size="icon"
                 className="h-8 w-8 shrink-0"
-                disabled={isLoading || !input.trim() || !apiKey}
+                disabled={isLoading || !input.trim() || !localStorage.getItem("GEMINI_API_KEY")}
               >
                 {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
