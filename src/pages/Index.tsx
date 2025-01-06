@@ -124,26 +124,25 @@ const Index = () => {
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className={cn(
-                "pr-20 py-6 text-base",
+                "pr-24 py-6 text-base",
               )}
               disabled={isLoading || !apiKey}
             />
-            <div className="absolute right-2 flex items-center space-x-2">
+            <div className="absolute right-2 flex items-center gap-2">
               <FileUploadZone 
                 onFileProcess={handleFileContent}
                 disabled={isLoading || !apiKey}
               />
               <Button
                 type="submit"
-                variant="ghost"
                 size="icon"
-                className="h-8 w-8"
+                className="h-8 w-8 shrink-0"
                 disabled={isLoading || !input.trim() || !apiKey}
               >
                 {isLoading ? (
-                  <Loader2 className="h-5 w-5 animate-spin" />
+                  <Loader2 className="h-4 w-4 animate-spin" />
                 ) : (
-                  <span className="text-xs">↵</span>
+                  <span className="text-base">↵</span>
                 )}
               </Button>
             </div>
