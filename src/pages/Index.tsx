@@ -100,8 +100,8 @@ const Index = () => {
             alt="Oil Pump Icon" 
             className="w-12 h-12 mx-auto mb-6"
           />
-          <h1 className="text-4xl font-bold mb-2">Discover Smarter Search</h1>
-          <p className="text-muted-foreground">Unlock intelligent search with our generative UI.</p>
+          <h1 className="text-4xl font-bold mb-2">NCTU Petrolume Tech Smarter Search</h1>
+          <p className="text-muted-foreground">Experience the power of intelligent search with our cutting-edge generative UI.</p>
         </div>
 
         {!localStorage.getItem("GEMINI_API_KEY") && (
