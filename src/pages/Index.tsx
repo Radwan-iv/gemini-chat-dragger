@@ -2,7 +2,7 @@ import { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
-import { Loader2, PumpBarrel, History } from "lucide-react";
+import { Loader2, Fuel, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatMessage from "@/components/ChatMessage";
 import ApiKeyInput from "@/components/ApiKeyInput";
@@ -85,7 +85,7 @@ const Index = () => {
       
       <div className="w-full max-w-3xl mx-auto pt-16 pb-24">
         <div className="text-center mb-12">
-          <PumpBarrel className="w-12 h-12 mx-auto mb-6 text-foreground" />
+          <Fuel className="w-12 h-12 mx-auto mb-6 text-foreground" />
           <h1 className="text-4xl font-bold mb-2">Discover Smarter Search</h1>
           <p className="text-muted-foreground">Unlock intelligent search with our generative UI.</p>
         </div>
