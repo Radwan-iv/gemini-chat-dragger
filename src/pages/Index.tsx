@@ -2,7 +2,7 @@ import { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useToast } from "@/components/ui/use-toast";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, PumpBarrel, History } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatMessage from "@/components/ChatMessage";
 import ApiKeyInput from "@/components/ApiKeyInput";
@@ -19,6 +19,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -68,16 +69,23 @@ const Index = () => {
   const apiKey = localStorage.getItem("GEMINI_API_KEY");
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-4 bg-background text-foreground">
-      <ThemeToggle />
+    <div className="min-h-screen flex flex-col items-center px-4 bg-background text-foreground relative">
+      <div className="absolute left-4 top-4 flex items-center gap-4">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setShowHistory(!showHistory)}
+          className="relative"
+          title="Search History"
+        >
+          <History className="h-5 w-5 text-foreground" />
+        </Button>
+        <ThemeToggle />
+      </div>
       
       <div className="w-full max-w-3xl mx-auto pt-16 pb-24">
         <div className="text-center mb-12">
-          <img 
-            src="/lovable-uploads/b877689e-8ae9-46d7-87a4-7e33e215ac22.png" 
-            alt="Logo" 
-            className="w-12 h-12 mx-auto mb-6"
-          />
+          <PumpBarrel className="w-12 h-12 mx-auto mb-6 text-foreground" />
           <h1 className="text-4xl font-bold mb-2">Discover Smarter Search</h1>
           <p className="text-muted-foreground">Unlock intelligent search with our generative UI.</p>
         </div>
@@ -85,6 +93,20 @@ const Index = () => {
         {!apiKey && (
           <div className="mb-8">
             <ApiKeyInput />
+          </div>
+        )}
+
+        {showHistory && (
+          <div className="mb-8 p-4 bg-muted rounded-lg">
+            <h2 className="font-semibold mb-4">Chat History</h2>
+            <div className="space-y-2">
+              {messages.map((msg, idx) => (
+                <div key={idx} className="text-sm">
+                  <span className="font-medium">{msg.role}: </span>
+                  {msg.content.substring(0, 50)}...
+                </div>
+              ))}
+            </div>
           </div>
         )}
 
