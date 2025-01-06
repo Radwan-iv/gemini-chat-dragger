@@ -1,11 +1,13 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useToast } from "@/components/ui/use-toast";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, PaperclipIcon } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import ChatMessage from "@/components/ChatMessage";
 import ApiKeyInput from "@/components/ApiKeyInput";
+import { FileUploadZone } from "@/components/FileUploadZone";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -17,50 +19,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = async (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      await handleFiles(files);
-    }
-  };
-
-  const handleFiles = async (files: File[]) => {
-    const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
-    const validFiles = files.filter(file => supportedTypes.includes(file.type));
-
-    if (validFiles.length === 0) {
-      toast({
-        title: "Unsupported file type",
-        description: "Please upload images (JPEG, PNG, GIF) or PDF files.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: "Files received",
-      description: `Processing ${validFiles.length} file(s)`,
-    });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,11 +60,17 @@ const Index = () => {
     }
   };
 
+  const handleFileContent = async (content: string) => {
+    setInput(content);
+  };
+
   // Check if API key exists
   const apiKey = localStorage.getItem("GEMINI_API_KEY");
 
   return (
-    <div className="min-h-screen flex flex-col items-center px-4 bg-white">
+    <div className="min-h-screen flex flex-col items-center px-4 bg-background text-foreground">
+      <ThemeToggle />
+      
       <div className="w-full max-w-3xl mx-auto pt-16 pb-24">
         <div className="text-center mb-12">
           <img 
@@ -114,7 +79,7 @@ const Index = () => {
             className="w-12 h-12 mx-auto mb-6"
           />
           <h1 className="text-4xl font-bold mb-2">Discover Smarter Search</h1>
-          <p className="text-gray-600">Unlock intelligent search with our generative UI.</p>
+          <p className="text-muted-foreground">Unlock intelligent search with our generative UI.</p>
         </div>
 
         {!apiKey && (
@@ -129,57 +94,23 @@ const Index = () => {
           ))}
         </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="relative"
-          onDragEnter={handleDrag}
-        >
-          {dragActive && (
-            <div
-              className="absolute inset-0 bg-black/5 rounded-lg border-2 border-dashed border-black/20 flex items-center justify-center"
-              onDragEnter={handleDrag}
-              onDragLeave={handleDrag}
-              onDragOver={handleDrag}
-              onDrop={handleDrop}
-            >
-              <div className="text-center">
-                <p className="text-sm text-gray-600">Drop your files here</p>
-              </div>
-            </div>
-          )}
-
+        <form onSubmit={handleSubmit} className="relative">
           <div className="relative flex items-center">
             <Input
-              ref={inputRef}
               type="text"
               placeholder="Ask a question..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
               className={cn(
                 "pr-20 py-6 text-base",
-                dragActive && "pointer-events-none"
               )}
               disabled={isLoading || !apiKey}
             />
             <div className="absolute right-2 flex items-center space-x-2">
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                multiple
-                onChange={(e) => e.target.files && handleFiles(Array.from(e.target.files))}
-                accept="image/*,.pdf"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                onClick={() => fileInputRef.current?.click()}
+              <FileUploadZone 
+                onFileProcess={handleFileContent}
                 disabled={isLoading || !apiKey}
-              >
-                <PaperclipIcon className="h-5 w-5 text-gray-400" />
-              </Button>
+              />
               <Button
                 type="submit"
                 variant="ghost"

@@ -20,7 +20,9 @@ const ChatMessage = ({ message }: ChatMessageProps) => {
       <div
         className={cn(
           "rounded-lg px-4 py-2 max-w-[80%]",
-          isUser ? "bg-black text-white" : "bg-gray-100 text-black"
+          isUser 
+            ? "bg-primary text-primary-foreground" 
+            : "bg-muted text-foreground dark:bg-muted/70"
         )}
       >
         <p className="text-sm whitespace-pre-wrap">{message.content}</p>
