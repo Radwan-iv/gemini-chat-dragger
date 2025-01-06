@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, PaperclipIcon } from "lucide-react";
 import ChatMessage from "@/components/ChatMessage";
+import ApiKeyInput from "@/components/ApiKeyInput";
 import { cn } from "@/lib/utils";
 
 interface Message {
@@ -55,7 +56,6 @@ const Index = () => {
       return;
     }
 
-    // Handle files here - for now just show a toast
     toast({
       title: "Files received",
       description: `Processing ${validFiles.length} file(s)`,
@@ -66,14 +66,23 @@ const Index = () => {
     e.preventDefault();
     if (!input.trim()) return;
 
+    const apiKey = localStorage.getItem("GEMINI_API_KEY");
+    if (!apiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter your Gemini API key first.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     const userMessage = { role: "user" as const, content: input };
     setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
 
     try {
-      // Initialize Gemini Pro
-      const genAI = new GoogleGenerativeAI(localStorage.getItem("GEMINI_API_KEY") || "");
+      const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
       const result = await model.generateContent(input);
@@ -81,16 +90,19 @@ const Index = () => {
       const text = response.text();
 
       setMessages(prev => [...prev, { role: "assistant", content: text }]);
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to get response from Gemini. Please check your API key.",
+        description: error.message || "Failed to get response from Gemini",
         variant: "destructive",
       });
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Check if API key exists
+  const apiKey = localStorage.getItem("GEMINI_API_KEY");
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 bg-white">
@@ -104,6 +116,12 @@ const Index = () => {
           <h1 className="text-4xl font-bold mb-2">Discover Smarter Search</h1>
           <p className="text-gray-600">Unlock intelligent search with our generative UI.</p>
         </div>
+
+        {!apiKey && (
+          <div className="mb-8">
+            <ApiKeyInput />
+          </div>
+        )}
 
         <div className="space-y-4 mb-8">
           {messages.map((message, index) => (
@@ -141,7 +159,7 @@ const Index = () => {
                 "pr-20 py-6 text-base",
                 dragActive && "pointer-events-none"
               )}
-              disabled={isLoading}
+              disabled={isLoading || !apiKey}
             />
             <div className="absolute right-2 flex items-center space-x-2">
               <input
@@ -158,7 +176,7 @@ const Index = () => {
                 size="icon"
                 className="h-8 w-8"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isLoading}
+                disabled={isLoading || !apiKey}
               >
                 <PaperclipIcon className="h-5 w-5 text-gray-400" />
               </Button>
@@ -167,7 +185,7 @@ const Index = () => {
                 variant="ghost"
                 size="icon"
                 className="h-8 w-8"
-                disabled={isLoading || !input.trim()}
+                disabled={isLoading || !input.trim() || !apiKey}
               >
                 {isLoading ? (
                   <Loader2 className="h-5 w-5 animate-spin" />
