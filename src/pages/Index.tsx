@@ -8,6 +8,7 @@ import ChatMessage from "@/components/ChatMessage";
 import ApiKeyInput from "@/components/ApiKeyInput";
 import { FileUploadZone } from "@/components/FileUploadZone";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SuggestedQuestions } from "@/components/SuggestedQuestions";
 
 interface Message {
   role: "user" | "assistant";
@@ -78,6 +79,10 @@ const Index = () => {
   // Check if API key exists
   const apiKey = localStorage.getItem("GEMINI_API_KEY");
 
+  const handleSuggestionSelect = (prompt: string) => {
+    setInput(prompt);
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center px-4 bg-background text-foreground relative">
       <div className="absolute left-4 top-4 flex items-center gap-4">
@@ -93,7 +98,7 @@ const Index = () => {
         <ThemeToggle />
       </div>
       
-      <div className="w-full max-w-3xl mx-auto pt-16 pb-24">
+      <div className="w-full max-w-7xl mx-auto pt-16 pb-24">
         <div className="text-center mb-12">
           <img 
             src="/lovable-uploads/968021f0-74de-4bc8-8197-4762b5129888.png" 
@@ -109,6 +114,8 @@ const Index = () => {
             <ApiKeyInput />
           </div>
         )}
+
+        <SuggestedQuestions onSelect={handleSuggestionSelect} />
 
         {showHistory && (
           <div className="mb-8 p-4 bg-muted rounded-lg">
