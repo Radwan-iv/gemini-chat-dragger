@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { PaperclipIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import * as pdfjsLib from 'pdfjs-dist';
 
 interface FileUploadZoneProps {
   onFileProcess: (content: string) => void;
@@ -23,6 +24,32 @@ export const FileUploadZone = ({ onFileProcess, disabled }: FileUploadZoneProps)
     }
   };
 
+  const processPdfFile = async (file: File) => {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      // Read the PDF content
+      const pdfData = await pdfjsLib.getDocument({ data: uint8Array }).promise;
+      let fullText = '';
+      
+      // Extract text from each page
+      for (let i = 1; i <= pdfData.numPages; i++) {
+        const page = await pdfData.getPage(i);
+        const textContent = await page.getTextContent();
+        const pageText = textContent.items
+          .map((item: any) => item.str)
+          .join(' ');
+        fullText += pageText + '\n';
+      }
+      
+      return fullText;
+    } catch (error) {
+      console.error('Error processing PDF:', error);
+      throw new Error('Failed to process PDF file');
+    }
+  };
+
   const processFile = async (file: File) => {
     try {
       if (file.type.includes('image/')) {
@@ -32,7 +59,14 @@ export const FileUploadZone = ({ onFileProcess, disabled }: FileUploadZoneProps)
           onFileProcess(`Analyze this image: ${base64String}`);
         };
         reader.readAsDataURL(file);
-      } else if (file.type === 'application/pdf' || file.type.includes('powerpoint')) {
+      } else if (file.type === 'application/pdf') {
+        const pdfText = await processPdfFile(file);
+        onFileProcess(`Analyze this PDF content:\n${pdfText}`);
+        toast({
+          title: "PDF processed",
+          description: "PDF content has been extracted and is ready for analysis",
+        });
+      } else if (file.type.includes('powerpoint')) {
         const text = await file.text();
         onFileProcess(`Analyze this ${file.type} content: ${text}`);
       }
