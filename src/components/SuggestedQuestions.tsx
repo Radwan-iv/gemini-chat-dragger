@@ -31,27 +31,27 @@ export const SuggestedQuestions = ({ onSelect }: { onSelect: (prompt: string) =>
   const suggestions = [
     {
       icon: <Image className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />,
-      title: "Image Generation",
-      description: "Produce images in various sizes and styles from text prompts, perfect for all your creative needs.",
-      prompt: "Can you help me generate an image description for..."
+      title: "Generate Oil Field Image",
+      description: "Create detailed images of oil fields, rigs, and industrial equipment using AI.",
+      prompt: "Generate a photorealistic image of a modern oil field with multiple pump jacks during sunset, showing industrial equipment and storage tanks in the background."
     },
     {
       icon: <Text className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />,
-      title: "Ad Copywriting",
-      description: "Create efficient copywriting that attracts your audience, driving engagement and conversions across channels.",
-      prompt: "Write an engaging ad copy for..."
+      title: "Technical Diagrams",
+      description: "Generate technical diagrams and schematics for petroleum equipment.",
+      prompt: "Create a detailed technical diagram of an oil pump jack mechanism with labels and annotations."
     },
     {
       icon: <FileText className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />,
-      title: "Helpdesk Article",
-      description: "Develop detailed support articles to guide users through troubleshooting steps and product usage tips.",
-      prompt: "Create a helpdesk article about..."
+      title: "Safety Illustrations",
+      description: "Create safety-related illustrations and warning signs for oil field operations.",
+      prompt: "Generate a safety illustration showing proper PPE usage in an oil field environment."
     },
     {
       icon: <FileStack className="w-6 h-6 text-indigo-600 dark:text-indigo-400" />,
-      title: "Summary",
-      description: "Efficiently summarize video, audio, or text content, choosing between long or short formats.",
-      prompt: "Can you summarize this content..."
+      title: "Process Visualization",
+      description: "Visualize oil extraction and refining processes through detailed illustrations.",
+      prompt: "Create a detailed visualization of the oil extraction process from underground reservoirs to surface collection."
     }
   ];
 

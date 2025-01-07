@@ -22,19 +22,52 @@ const Index = () => {
   const [showHistory, setShowHistory] = useState(false);
   const { toast } = useToast();
 
+  const generateImage = async (prompt: string) => {
+    const togetherApiKey = localStorage.getItem("TOGETHER_API_KEY");
+    if (!togetherApiKey) {
+      toast({
+        title: "API Key Required",
+        description: "Please enter your Together AI API key first.",
+        variant: "destructive",
+      });
+      return null;
+    }
+
+    try {
+      const response = await fetch('https://api.together.xyz/inference', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${togetherApiKey}`
+        },
+        body: JSON.stringify({
+          model: "stabilityai/stable-diffusion-xl-base-1.0",
+          prompt: prompt,
+          negative_prompt: "blurry, bad quality, distorted",
+          max_tokens: 1024,
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate image');
+      }
+
+      const data = await response.json();
+      return data.output.choices[0].image_base64;
+    } catch (error) {
+      console.error('Error generating image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate image. Please try again.",
+        variant: "destructive",
+      });
+      return null;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
-
-    const apiKey = localStorage.getItem("GEMINI_API_KEY");
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please enter your Gemini API key first.",
-        variant: "destructive",
-      });
-      return;
-    }
 
     const userMessage = { role: "user" as const, content: input };
     setMessages(prev => [...prev, userMessage]);
@@ -42,22 +75,38 @@ const Index = () => {
     setIsLoading(true);
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      if (input.toLowerCase().includes("generate") && input.toLowerCase().includes("image")) {
+        const imageBase64 = await generateImage(input);
+        if (imageBase64) {
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: `![Generated Image](data:image/png;base64,${imageBase64})`
+          }]);
+        }
+      } else {
+        const apiKey = localStorage.getItem("GEMINI_API_KEY");
+        if (!apiKey) {
+          toast({
+            title: "API Key Required",
+            description: "Please enter your Gemini API key first.",
+            variant: "destructive",
+          });
+          return;
+        }
 
-      const result = await model.generateContent(input);
-      const response = await result.response;
-      const text = response.text();
-
-      setMessages(prev => [...prev, { role: "assistant", content: text }]);
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const result = await model.generateContent(input);
+        const response = await result.response;
+        const text = response.text();
+        setMessages(prev => [...prev, { role: "assistant", content: text }]);
+      }
     } catch (error: any) {
-      let errorMessage = "Failed to get response from Gemini";
+      let errorMessage = "Failed to get response";
       
-      // Check for token limit error
       if (error?.status === 400 && error?.body?.includes("max tokens limit")) {
         errorMessage = "Your message is too long. Please try sending a shorter message.";
       }
-      // Check for rate limit error
       else if (error?.status === 429 || (error?.body && error.body.includes("RESOURCE_EXHAUSTED"))) {
         errorMessage = "API rate limit exceeded. Please wait a moment before trying again.";
       }
@@ -75,9 +124,6 @@ const Index = () => {
   const handleFileContent = async (content: string) => {
     setInput(content);
   };
-
-  // Check if API key exists
-  const apiKey = localStorage.getItem("GEMINI_API_KEY");
 
   const handleSuggestionSelect = (prompt: string) => {
     setInput(prompt);
