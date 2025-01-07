@@ -3,6 +3,10 @@ import { Button } from "@/components/ui/button";
 import { PaperclipIcon } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import * as pdfjsLib from 'pdfjs-dist';
+import { GlobalWorkerOptions } from 'pdfjs-dist/build/pdf';
+
+// Initialize the worker
+GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.js`;
 
 interface FileUploadZoneProps {
   onFileProcess: (content: string) => void;
