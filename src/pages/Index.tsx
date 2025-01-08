@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Loader2, History } from "lucide-react";
+import { History } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ChatMessage from "@/components/ChatMessage";
-import ApiKeyInput from "@/components/ApiKeyInput";
-import { FileUploadZone } from "@/components/FileUploadZone";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SuggestedQuestions } from "@/components/SuggestedQuestions";
+import { generateImage } from "@/components/ImageGeneration";
+import ChatInterface from "@/components/ChatInterface";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Message {
   role: "user" | "assistant";
@@ -16,47 +16,48 @@ interface Message {
 
 const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    const apiKey = localStorage.getItem("GEMINI_API_KEY");
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please enter your Gemini API key first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+  const handleSubmit = async (input: string) => {
     const userMessage = { role: "user" as const, content: input };
     setMessages(prev => [...prev, userMessage]);
-    setInput("");
     setIsLoading(true);
 
     try {
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+      if (input.toLowerCase().includes("generate") && input.toLowerCase().includes("image")) {
+        const imageBase64 = await generateImage(input);
+        if (imageBase64) {
+          setMessages(prev => [...prev, { 
+            role: "assistant", 
+            content: `![Generated Image](data:image/png;base64,${imageBase64})`
+          }]);
+        }
+      } else {
+        const { data: { secret: geminiApiKey }, error: secretError } = await supabase
+          .from('secrets')
+          .select('secret')
+          .eq('name', 'GEMINI_API_KEY')
+          .single();
 
-      const result = await model.generateContent(input);
-      const response = await result.response;
-      const text = response.text();
+        if (secretError || !geminiApiKey) {
+          throw new Error('Gemini API key not found');
+        }
 
-      setMessages(prev => [...prev, { role: "assistant", content: text }]);
+        const genAI = new GoogleGenerativeAI(geminiApiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+        const result = await model.generateContent(input);
+        const response = await result.response;
+        const text = response.text();
+        setMessages(prev => [...prev, { role: "assistant", content: text }]);
+      }
     } catch (error: any) {
-      let errorMessage = "Failed to get response from Gemini";
+      let errorMessage = "Failed to get response";
       
-      // Check for token limit error
       if (error?.status === 400 && error?.body?.includes("max tokens limit")) {
         errorMessage = "Your message is too long. Please try sending a shorter message.";
       }
-      // Check for rate limit error
       else if (error?.status === 429 || (error?.body && error.body.includes("RESOURCE_EXHAUSTED"))) {
         errorMessage = "API rate limit exceeded. Please wait a moment before trying again.";
       }
@@ -71,12 +72,13 @@ const Index = () => {
     }
   };
 
-  const handleFileContent = async (content: string) => {
-    setInput(content);
+  const handleFileContent = (content: string) => {
+    handleSubmit(content);
   };
 
-  // Check if API key exists
-  const apiKey = localStorage.getItem("GEMINI_API_KEY");
+  const handleSuggestionSelect = (prompt: string) => {
+    handleSubmit(prompt);
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 bg-background text-foreground relative">
@@ -93,7 +95,7 @@ const Index = () => {
         <ThemeToggle />
       </div>
       
-      <div className="w-full max-w-3xl mx-auto pt-16 pb-24">
+      <div className="w-full max-w-7xl mx-auto pt-16 pb-24">
         <div className="text-center mb-12">
           <img 
             src="/lovable-uploads/968021f0-74de-4bc8-8197-4762b5129888.png" 
@@ -104,11 +106,7 @@ const Index = () => {
           <p className="text-muted-foreground">Experience the power of intelligent search with our cutting-edge generative UI.</p>
         </div>
 
-        {!localStorage.getItem("GEMINI_API_KEY") && (
-          <div className="mb-8">
-            <ApiKeyInput />
-          </div>
-        )}
+        <SuggestedQuestions onSelect={handleSuggestionSelect} />
 
         {showHistory && (
           <div className="mb-8 p-4 bg-muted rounded-lg">
@@ -124,42 +122,12 @@ const Index = () => {
           </div>
         )}
 
-        <div className="space-y-4 mb-8">
-          {messages.map((message, index) => (
-            <ChatMessage key={index} message={message} />
-          ))}
-        </div>
-
-        <form onSubmit={handleSubmit} className="relative">
-          <div className="relative flex items-center">
-            <Input
-              type="text"
-              placeholder="Ask a question..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              className="pr-24 py-6 text-base"
-              disabled={isLoading || !localStorage.getItem("GEMINI_API_KEY")}
-            />
-            <div className="absolute right-2 flex items-center gap-2">
-              <FileUploadZone 
-                onFileProcess={handleFileContent}
-                disabled={isLoading || !localStorage.getItem("GEMINI_API_KEY")}
-              />
-              <Button
-                type="submit"
-                size="icon"
-                className="h-8 w-8 shrink-0"
-                disabled={isLoading || !input.trim() || !localStorage.getItem("GEMINI_API_KEY")}
-              >
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <span className="text-base">↵</span>
-                )}
-              </Button>
-            </div>
-          </div>
-        </form>
+        <ChatInterface
+          messages={messages}
+          isLoading={isLoading}
+          onSubmit={handleSubmit}
+          onFileProcess={handleFileContent}
+        />
       </div>
     </div>
   );
