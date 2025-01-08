@@ -10,6 +10,7 @@ import { FileUploadZone } from "@/components/FileUploadZone";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SuggestedQuestions } from "@/components/SuggestedQuestions";
 import { processUserInput, CUSTOM_PROMPT } from "@/utils/chatResponses";
+import HistorySidebar from "@/components/HistorySidebar";
 
 interface Message {
   role: "user" | "assistant";
@@ -76,7 +77,6 @@ const Index = () => {
     setIsLoading(true);
 
     try {
-      // Check for special responses first
       const specialResponse = processUserInput(input);
       if (specialResponse) {
         setMessages(prev => [...prev, { role: "assistant", content: specialResponse }]);
@@ -105,7 +105,6 @@ const Index = () => {
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
         
-        // Add the custom prompt to the context
         const context = `${CUSTOM_PROMPT}\n\nUser: ${input}`;
         const result = await model.generateContent(context);
         const response = await result.response;
@@ -132,6 +131,14 @@ const Index = () => {
     }
   };
 
+  const handleClearHistory = () => {
+    setMessages([]);
+    toast({
+      title: "History Cleared",
+      description: "Your chat history has been cleared.",
+    });
+  };
+
   const handleFileContent = async (content: string) => {
     setInput(content);
   };
@@ -155,6 +162,13 @@ const Index = () => {
         <ThemeToggle />
       </div>
       
+      <HistorySidebar
+        open={showHistory}
+        onOpenChange={setShowHistory}
+        messages={messages}
+        onClearHistory={handleClearHistory}
+      />
+
       <div className="w-full max-w-7xl mx-auto pt-16 pb-24">
         <div className="text-center mb-12">
           <img 
