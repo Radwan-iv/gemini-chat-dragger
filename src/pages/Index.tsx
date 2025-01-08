@@ -2,7 +2,7 @@ import { useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { Loader2, History } from "lucide-react";
+import { Loader2, History, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import ChatMessage from "@/components/ChatMessage";
 import ApiKeyInput from "@/components/ApiKeyInput";
@@ -10,6 +10,8 @@ import { FileUploadZone } from "@/components/FileUploadZone";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SuggestedQuestions } from "@/components/SuggestedQuestions";
 import { processUserInput, CUSTOM_PROMPT } from "@/utils/chatResponses";
+import { SearchResults } from "@/components/SearchResults";
+import { performSearch, SearchResult } from "@/utils/searchUtils";
 
 interface Message {
   role: "user" | "assistant";
@@ -21,6 +23,8 @@ const Index = () => {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
   const { toast } = useToast();
 
   const generateImage = async (prompt: string) => {
@@ -66,6 +70,34 @@ const Index = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    if (!input.trim()) return;
+    
+    setIsSearching(true);
+    try {
+      const apiKey = localStorage.getItem("GEMINI_API_KEY");
+      if (!apiKey) {
+        toast({
+          title: "API Key Required",
+          description: "Please enter your Gemini API key first.",
+          variant: "destructive",
+        });
+        return;
+      }
+      
+      const results = await performSearch(input, apiKey);
+      setSearchResults(results);
+    } catch (error) {
+      toast({
+        title: "Search Error",
+        description: "Failed to perform search. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim()) return;
@@ -82,6 +114,9 @@ const Index = () => {
         setMessages(prev => [...prev, { role: "assistant", content: specialResponse }]);
         return;
       }
+
+      // Perform search alongside chat
+      handleRefresh();
 
       if (input.toLowerCase().includes("generate") && input.toLowerCase().includes("image")) {
         const imageBase64 = await generateImage(input);
@@ -172,21 +207,7 @@ const Index = () => {
           </div>
         )}
 
-        <SuggestedQuestions onSelect={handleSuggestionSelect} />
-
-        {showHistory && (
-          <div className="mb-8 p-4 bg-muted rounded-lg">
-            <h2 className="font-semibold mb-4">Chat History</h2>
-            <div className="space-y-2">
-              {messages.map((msg, idx) => (
-                <div key={idx} className="text-sm">
-                  <span className="font-medium">{msg.role}: </span>
-                  {msg.content.substring(0, 50)}...
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        <SearchResults results={searchResults} isLoading={isSearching} />
 
         <div className="space-y-4 mb-8">
           {messages.map((message, index) => (
@@ -201,10 +222,21 @@ const Index = () => {
               placeholder="Ask a question..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              className="pr-24 py-6 text-base"
+              className="pr-32 py-6 text-base"
               disabled={isLoading || !localStorage.getItem("GEMINI_API_KEY")}
             />
             <div className="absolute right-2 flex items-center gap-2">
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                onClick={handleRefresh}
+                disabled={isSearching || !input.trim() || !localStorage.getItem("GEMINI_API_KEY")}
+                className="h-8 w-8"
+                title="Refresh Search"
+              >
+                <RefreshCw className={`h-4 w-4 ${isSearching ? 'animate-spin' : ''}`} />
+              </Button>
               <FileUploadZone 
                 onFileProcess={handleFileContent}
                 disabled={isLoading || !localStorage.getItem("GEMINI_API_KEY")}
