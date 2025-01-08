@@ -9,6 +9,7 @@ import ApiKeyInput from "@/components/ApiKeyInput";
 import { FileUploadZone } from "@/components/FileUploadZone";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SuggestedQuestions } from "@/components/SuggestedQuestions";
+import { processUserInput, CUSTOM_PROMPT } from "@/utils/chatResponses";
 
 interface Message {
   role: "user" | "assistant";
@@ -75,6 +76,13 @@ const Index = () => {
     setIsLoading(true);
 
     try {
+      // Check for special responses first
+      const specialResponse = processUserInput(input);
+      if (specialResponse) {
+        setMessages(prev => [...prev, { role: "assistant", content: specialResponse }]);
+        return;
+      }
+
       if (input.toLowerCase().includes("generate") && input.toLowerCase().includes("image")) {
         const imageBase64 = await generateImage(input);
         if (imageBase64) {
@@ -96,7 +104,10 @@ const Index = () => {
 
         const genAI = new GoogleGenerativeAI(apiKey);
         const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-        const result = await model.generateContent(input);
+        
+        // Add the custom prompt to the context
+        const context = `${CUSTOM_PROMPT}\n\nUser: ${input}`;
+        const result = await model.generateContent(context);
         const response = await result.response;
         const text = response.text();
         setMessages(prev => [...prev, { role: "assistant", content: text }]);
