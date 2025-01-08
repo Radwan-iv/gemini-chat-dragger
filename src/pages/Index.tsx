@@ -13,7 +13,6 @@ import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
-  SidebarTrigger,
   SidebarProvider
 } from "@/components/ui/sidebar";
 
@@ -49,6 +48,13 @@ const Index = () => {
     setIsLoading(true);
 
     try {
+      // Special handling for "who made you" question
+      if (input.toLowerCase().includes("who made you")) {
+        setMessages(prev => [...prev, { role: "assistant", content: "I was made by Omar Radwan." }]);
+        setIsLoading(false);
+        return;
+      }
+
       const genAI = new GoogleGenerativeAI(apiKey);
       const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
@@ -60,11 +66,9 @@ const Index = () => {
     } catch (error: any) {
       let errorMessage = "Failed to get response from Gemini";
       
-      // Check for token limit error
       if (error?.status === 400 && error?.body?.includes("max tokens limit")) {
         errorMessage = "Your message is too long. Please try sending a shorter message.";
       }
-      // Check for rate limit error
       else if (error?.status === 429 || (error?.body && error.body.includes("RESOURCE_EXHAUSTED"))) {
         errorMessage = "API rate limit exceeded. Please wait a moment before trying again.";
       }
@@ -98,63 +102,75 @@ const Index = () => {
     });
   };
 
+  const toggleHistory = () => {
+    setShowHistory(!showHistory);
+  };
+
   return (
-    <SidebarProvider defaultOpen>
+    <SidebarProvider defaultOpen={false}>
       <div className="min-h-screen flex bg-background text-foreground relative">
-        {/* Sidebar */}
-        <Sidebar className="w-80 border-r">
-          <SidebarHeader className="p-4 flex items-center justify-between border-b">
-            <div className="flex items-center gap-2">
-              <History className="h-5 w-5" />
-              <h2 className="font-semibold">History</h2>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleRefreshHistory}
-                title="Refresh History"
-              >
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleClearHistory}
-                title="Clear History"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <MoreVertical className="h-4 w-4" />
-              </Button>
-            </div>
-          </SidebarHeader>
-          <SidebarContent className="p-4">
-            {messages.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                No search history
+        {showHistory && (
+          <Sidebar className="w-80 border-r">
+            <SidebarHeader className="p-4 flex items-center justify-between border-b">
+              <div className="flex items-center gap-2">
+                <History className="h-5 w-5" />
+                <h2 className="font-semibold">History</h2>
               </div>
-            ) : (
-              <div className="space-y-2">
-                {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className="p-2 rounded-lg hover:bg-muted cursor-pointer text-sm"
-                  >
-                    <span className="font-medium">{msg.role}: </span>
-                    {msg.content.substring(0, 50)}...
-                  </div>
-                ))}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleRefreshHistory}
+                  title="Refresh History"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleClearHistory}
+                  title="Clear History"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+                <Button variant="ghost" size="icon">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
               </div>
-            )}
-          </SidebarContent>
-        </Sidebar>
+            </SidebarHeader>
+            <SidebarContent className="p-4">
+              {messages.length === 0 ? (
+                <div className="text-center text-muted-foreground py-8">
+                  No search history
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {messages.map((msg, idx) => (
+                    <div
+                      key={idx}
+                      className="p-2 rounded-lg hover:bg-muted cursor-pointer text-sm"
+                    >
+                      <span className="font-medium">{msg.role}: </span>
+                      {msg.content.substring(0, 50)}...
+                    </div>
+                  ))}
+                </div>
+              )}
+            </SidebarContent>
+          </Sidebar>
+        )}
 
         {/* Main Content */}
         <div className="flex-1 flex flex-col items-center px-4">
           <div className="absolute right-4 top-4 flex items-center gap-4">
-            <SidebarTrigger />
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleHistory}
+              className="h-8 w-8"
+            >
+              <History className="h-4 w-4" />
+            </Button>
             <ThemeToggle />
           </div>
           
