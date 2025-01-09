@@ -9,6 +9,7 @@ import ApiKeyInput from "@/components/ApiKeyInput";
 import { FileUploadZone } from "@/components/FileUploadZone";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SuggestedQuestions } from "@/components/SuggestedQuestions";
+import { SearchConfigManager } from "@/components/SearchConfigManager";
 import {
   Sidebar,
   SidebarContent,
@@ -108,6 +109,7 @@ const Index = () => {
 
   return (
     <SidebarProvider defaultOpen={false}>
+      <SearchConfigManager />
       <div className="min-h-screen flex bg-background text-foreground relative">
         {showHistory && (
           <Sidebar className="w-80 border-r">
