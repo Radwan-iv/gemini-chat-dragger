@@ -49,7 +49,6 @@ const Index = () => {
     setIsLoading(true);
 
     try {
-      // Special handling for "who made you" question
       if (input.toLowerCase().includes("who made you")) {
         setMessages(prev => [...prev, { role: "assistant", content: "I was made by Omar Radwan." }]);
         setIsLoading(false);
@@ -86,6 +85,9 @@ const Index = () => {
 
   const handleFileContent = async (content: string) => {
     setInput(content);
+    // Automatically submit when a file is processed
+    const submitEvent = new Event('submit') as unknown as React.FormEvent;
+    handleSubmit(submitEvent);
   };
 
   const handleClearHistory = () => {
@@ -162,7 +164,6 @@ const Index = () => {
           </Sidebar>
         )}
 
-        {/* Main Content */}
         <div className="flex-1 flex flex-col items-center px-4">
           <div className="absolute right-4 top-4 flex items-center gap-4">
             <Button
@@ -205,7 +206,7 @@ const Index = () => {
               <div className="relative flex items-center">
                 <Input
                   type="text"
-                  placeholder="Ask a question..."
+                  placeholder="Ask a question or drag & drop files here..."
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   className="pr-24 py-6 text-base"

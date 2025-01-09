@@ -72,9 +72,6 @@ export const FileUploadZone = ({ onFileProcess, disabled }: FileUploadZoneProps)
           title: "PDF processed",
           description: "PDF content has been extracted and is ready for analysis",
         });
-      } else if (file.type.includes('powerpoint')) {
-        const text = await file.text();
-        onFileProcess(`Analyze this ${file.type} content: ${text}`);
       }
     } catch (error) {
       toast({
@@ -86,20 +83,13 @@ export const FileUploadZone = ({ onFileProcess, disabled }: FileUploadZoneProps)
   };
 
   const handleFiles = async (files: File[]) => {
-    const supportedTypes = [
-      'image/jpeg', 
-      'image/png', 
-      'image/gif', 
-      'application/pdf',
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
-    ];
-    
+    const supportedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
     const validFiles = files.filter(file => supportedTypes.includes(file.type));
 
     if (validFiles.length === 0) {
       toast({
         title: "Unsupported file type",
-        description: "Please upload images (JPEG, PNG, GIF), PDF, or PPTX files.",
+        description: "Please upload images (JPEG, PNG, GIF) or PDF files.",
         variant: "destructive",
       });
       return;
@@ -127,14 +117,20 @@ export const FileUploadZone = ({ onFileProcess, disabled }: FileUploadZoneProps)
   };
 
   return (
-    <>
+    <div 
+      onDragEnter={handleDrag}
+      onDragLeave={handleDrag}
+      onDragOver={handleDrag}
+      onDrop={handleDrop}
+      className={`relative ${dragActive ? 'bg-muted/50' : ''}`}
+    >
       <input
         type="file"
         ref={fileInputRef}
         className="hidden"
         multiple
         onChange={(e) => e.target.files && handleFiles(Array.from(e.target.files))}
-        accept="image/*,.pdf,.pptx"
+        accept="image/*,.pdf"
       />
       <Button
         type="button"
@@ -146,6 +142,6 @@ export const FileUploadZone = ({ onFileProcess, disabled }: FileUploadZoneProps)
       >
         <PaperclipIcon className="h-5 w-5 text-gray-400 dark:text-gray-500" />
       </Button>
-    </>
+    </div>
   );
 };
