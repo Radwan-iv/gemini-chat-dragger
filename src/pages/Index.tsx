@@ -1,111 +1,25 @@
-import { useState } from "react";
-import { GoogleGenerativeAI } from "@google/generative-ai";
-import { useToast } from "@/hooks/use-toast";
-import { Input } from "@/components/ui/input";
-import { Loader2, History, RefreshCw, Trash2, MoreVertical } from "lucide-react";
+import { History, RefreshCw, Trash2, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import ChatMessage from "@/components/ChatMessage";
 import ApiKeyInput from "@/components/ApiKeyInput";
-import { FileUploadZone } from "@/components/FileUploadZone";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { SuggestedQuestions } from "@/components/SuggestedQuestions";
 import { SearchConfigManager } from "@/components/SearchConfigManager";
+import { Chat } from "@/components/Chat";
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
   SidebarProvider
 } from "@/components/ui/sidebar";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 const Index = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const { toast } = useToast();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim()) return;
-
-    const apiKey = localStorage.getItem("GEMINI_API_KEY");
-    if (!apiKey) {
-      toast({
-        title: "API Key Required",
-        description: "Please enter your Gemini API key first.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    const userMessage = { role: "user" as const, content: input };
-    setMessages(prev => [...prev, userMessage]);
-    setInput("");
-    setIsLoading(true);
-
-    try {
-      if (input.toLowerCase().includes("who made you")) {
-        setMessages(prev => [...prev, { role: "assistant", content: "I was made by Omar Radwan." }]);
-        setIsLoading(false);
-        return;
-      }
-
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: "gemini-pro" });
-
-      const result = await model.generateContent(input);
-      const response = await result.response;
-      const text = response.text();
-
-      setMessages(prev => [...prev, { role: "assistant", content: text }]);
-    } catch (error: any) {
-      let errorMessage = "Failed to get response from Gemini";
-      
-      // Handle rate limit error (429)
-      if (error?.status === 429 || (error?.body && error.body.includes("RESOURCE_EXHAUSTED"))) {
-        errorMessage = "API rate limit exceeded. Please wait a moment before trying again, or try using a different API key.";
-        console.error("Rate limit error:", error);
-      }
-      // Handle token limit error (400)
-      else if (error?.status === 400 && error?.body?.includes("max tokens limit")) {
-        errorMessage = "Your message is too long. Please try sending a shorter message.";
-        console.error("Token limit error:", error);
-      }
-      // Log any other errors for debugging
-      else {
-        console.error("Unexpected error:", error);
-      }
-      
-      toast({
-        title: "Error",
-        description: errorMessage,
-        variant: "destructive",
-      });
-
-      // Add error message to chat
-      setMessages(prev => [...prev, { 
-        role: "assistant", 
-        content: `Error: ${errorMessage}` 
-      }]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleFileContent = async (content: string) => {
-    setInput(content);
-    // Automatically submit when a file is processed
-    const submitEvent = new Event('submit') as unknown as React.FormEvent;
-    handleSubmit(submitEvent);
-  };
-
   const handleClearHistory = () => {
-    setMessages([]);
+    // We'll implement this in a future update with proper state management
     toast({
       title: "History cleared",
       description: "Your chat history has been cleared.",
@@ -157,23 +71,9 @@ const Index = () => {
               </div>
             </SidebarHeader>
             <SidebarContent className="p-4">
-              {messages.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  No search history
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {messages.map((msg, idx) => (
-                    <div
-                      key={idx}
-                      className="p-2 rounded-lg hover:bg-muted cursor-pointer text-sm"
-                    >
-                      <span className="font-medium">{msg.role}: </span>
-                      {msg.content.substring(0, 50)}...
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="text-center text-muted-foreground py-8">
+                No search history
+              </div>
             </SidebarContent>
           </Sidebar>
         )}
@@ -208,44 +108,9 @@ const Index = () => {
               </div>
             )}
 
-            <SuggestedQuestions onSelect={(prompt) => setInput(prompt)} />
-
-            <div className="space-y-4 mb-8">
-              {messages.map((message, index) => (
-                <ChatMessage key={index} message={message} />
-              ))}
-            </div>
-
-            <form onSubmit={handleSubmit} className="relative">
-              <div className="relative flex items-center">
-                <Input
-                  type="text"
-                  placeholder="Ask a question or drag & drop files here..."
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  className="pr-24 py-6 text-base"
-                  disabled={isLoading || !localStorage.getItem("GEMINI_API_KEY")}
-                />
-                <div className="absolute right-2 flex items-center gap-2">
-                  <FileUploadZone 
-                    onFileProcess={handleFileContent}
-                    disabled={isLoading || !localStorage.getItem("GEMINI_API_KEY")}
-                  />
-                  <Button
-                    type="submit"
-                    size="icon"
-                    className="h-8 w-8 shrink-0"
-                    disabled={isLoading || !input.trim() || !localStorage.getItem("GEMINI_API_KEY")}
-                  >
-                    {isLoading ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <span className="text-base">↵</span>
-                    )}
-                  </Button>
-                </div>
-              </div>
-            </form>
+            <SuggestedQuestions onSelect={(prompt) => console.log(prompt)} />
+            
+            <Chat />
           </div>
         </div>
       </div>
