@@ -66,11 +66,19 @@ const Index = () => {
     } catch (error: any) {
       let errorMessage = "Failed to get response from Gemini";
       
-      if (error?.status === 400 && error?.body?.includes("max tokens limit")) {
-        errorMessage = "Your message is too long. Please try sending a shorter message.";
+      // Handle rate limit error (429)
+      if (error?.status === 429 || (error?.body && error.body.includes("RESOURCE_EXHAUSTED"))) {
+        errorMessage = "API rate limit exceeded. Please wait a moment before trying again, or try using a different API key.";
+        console.error("Rate limit error:", error);
       }
-      else if (error?.status === 429 || (error?.body && error.body.includes("RESOURCE_EXHAUSTED"))) {
-        errorMessage = "API rate limit exceeded. Please wait a moment before trying again.";
+      // Handle token limit error (400)
+      else if (error?.status === 400 && error?.body?.includes("max tokens limit")) {
+        errorMessage = "Your message is too long. Please try sending a shorter message.";
+        console.error("Token limit error:", error);
+      }
+      // Log any other errors for debugging
+      else {
+        console.error("Unexpected error:", error);
       }
       
       toast({
@@ -78,6 +86,12 @@ const Index = () => {
         description: errorMessage,
         variant: "destructive",
       });
+
+      // Add error message to chat
+      setMessages(prev => [...prev, { 
+        role: "assistant", 
+        content: `Error: ${errorMessage}` 
+      }]);
     } finally {
       setIsLoading(false);
     }
