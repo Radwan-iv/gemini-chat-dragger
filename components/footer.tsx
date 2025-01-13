@@ -1,6 +1,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { SiDiscord, SiGithub, SiX } from 'react-icons/si'
+import { Facebook } from 'lucide-react'
 import { Button } from './ui/button'
 
 const Footer: React.FC = () => {
@@ -23,6 +24,15 @@ const Footer: React.FC = () => {
         >
           <Link href="" target="_blank">
             <SiX size={18} />
+          </Link>
+        </Button>
+        <Button
+          variant={'ghost'}
+          size={'icon'}
+          className="text-muted-foreground/50"
+        >
+          <Link href="" target="_blank">
+            <Facebook size={18} />
           </Link>
         </Button>
         <Button
